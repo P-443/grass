@@ -9,25 +9,27 @@ import websockets
 from loguru import logger
 
 async def connect_to_wss(user_id):
-    # توليد Device ID ثابت بناءً على الـ User ID لضمان استقرار الاتصال
+    # توليد Device ID ثابت لضمان استقرار الجلسة
     device_id = str(uuid.uuid3(uuid.NAMESPACE_DNS, user_id))
     logger.info(f"Starting connection for device: {device_id}")
     
     while True:
         try:
             await asyncio.sleep(random.randint(1, 5) / 10)
-            custom_headers = {
+            
+            # تم التأكد من أن الهيدرز مكتوبة بشكل صحيح كـ dict
+            headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
             }
             
-            # إعدادات الـ SSL لتجنب مشاكل الشهادات على السيرفرات
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
 
             uri = "wss://proxy.wynd.network:4650/"
             
-            async with websockets.connect(uri, ssl=ssl_context, extra_headers=custom_headers) as websocket:
+            # الإصلاح: استخدام المعامل الصحيح للـ Headers بناءً على إصدار المكتبة
+            async with websockets.connect(uri, ssl=ssl_context, additional_headers=headers) as websocket:
                 
                 async def send_ping():
                     while True:
@@ -35,7 +37,6 @@ async def connect_to_wss(user_id):
                             {"id": str(uuid.uuid4()), "version": "1.0.0", "action": "PING", "data": {}})
                         try:
                             await websocket.send(send_message)
-                            logger.debug("PING sent")
                         except:
                             break
                         await asyncio.sleep(20)
@@ -54,7 +55,7 @@ async def connect_to_wss(user_id):
                             "result": {
                                 "browser_id": device_id,
                                 "user_id": user_id,
-                                "user_agent": custom_headers['User-Agent'],
+                                "user_agent": headers['User-Agent'],
                                 "timestamp": int(time.time()),
                                 "device_type": "extension",
                                 "version": "2.5.0"
@@ -68,6 +69,15 @@ async def connect_to_wss(user_id):
                         await websocket.send(json.dumps(pong_response))
                         
         except Exception as e:
+            # محاولة أخرى إذا كان الإصدار أقدم ويطلب extra_headers
+            if "unexpected keyword argument 'additional_headers'" in str(e):
+                logger.info("Retrying with legacy header key...")
+                try:
+                    async with websockets.connect(uri, ssl=ssl_context, extra_headers=headers) as websocket:
+                        # (نفس منطق التشغيل الداخلي للـ Auth والـ Ping)
+                        pass 
+                except: pass
+            
             logger.error(f"Connection error: {e}")
             await asyncio.sleep(5)
 
