@@ -1,17 +1,12 @@
-# استخدام نسخة خفيفة من بايثون
-FROM python:3.9-slim
+# استخدام صورة جاهزة مخصصة لـ Grass Node
+FROM mrwan0/grass-node:latest
 
-# تثبيت المكتبات اللازمة للاتصال
-RUN pip install --no-cache-dir requests loguru websockets_proxy self_parsing
-
-# تحميل سكربت التشغيل (نسخة مجتمعية موثوقة للـ Docker)
-ADD https://raw.githubusercontent.com/ym95/grass-node/main/main.py /app/main.py
-
+# تحديد مسار العمل
 WORKDIR /app
 
-# إعداد المتغيرات البيئية التي سيستخدمها السكربت
-ENV GRASS_USER="tahanmare0062"
-ENV GRASS_PASS="FirstNameAhmed1*"
+# المتغيرات البيئية (سيتم سحبها من إعدادات ريلواي)
+ENV USER_EMAIL="tahanmare0062"
+ENV USER_PASSWORD="FirstNameAhmed1*"
 
-# أمر التشغيل
-CMD ["python", "main.py"]
+# أمر التشغيل الافتراضي الموجود في الصورة
+CMD ["python3", "main.py"]
