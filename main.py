@@ -4,11 +4,15 @@ import ssl
 import json
 import time
 import uuid
+import os
 from loguru import logger
 from websockets_proxy import proxy_connect
 
-async def connect_to_wss(user_id, proxy_url):
-    device_id = str(uuid.uuid3(uuid.NAMESPACE_DNS, proxy_url))
+async def connect_to_wss(user_id, proxy_url=None):
+    # إصلاح الخطأ: إذا لم يوجد بروكسي نستخدم اسم ثابت لتوليد الـ ID
+    name_for_uuid = proxy_url if proxy_url else "RAILWAY_SERVER_IP"
+    device_id = str(uuid.uuid3(uuid.NAMESPACE_DNS, name_for_uuid))
+    
     logger.info(f"Starting connection for device: {device_id}")
     while True:
         try:
@@ -61,20 +65,17 @@ async def connect_to_wss(user_id, proxy_url):
                         logger.debug(f"Sending PONG: {pong_response}")
                         await websocket.send(json.dumps(pong_response))
         except Exception as e:
-            logger.error(f"Error: {e} on proxy {proxy_url}")
+            logger.error(f"Error: {e} on connection")
+            await asyncio.sleep(5)
 
 async def main():
-    # اترك هؤلاء فارغين، سنسحبهم من Railway Variables
-    import os
-    _user_id = os.getenv("USER_ID") # Grass User ID (UUID)
+    _user_id = os.getenv("USER_ID")
     
     if not _user_id:
-        logger.error("USER_ID variable is missing!")
+        logger.error("USER_ID variable is missing in Railway Variables!")
         return
 
-    # سنستخدم الـ IP الخاص بالسيرفر مباشرة بدون بروكسي خارجي
-    # لأن Railway يعطيك اتصالاً مستقراً
-    await connect_to_wss(_user_id, None)
+    await connect_to_wss(_user_id)
 
 if __name__ == '__main__':
     asyncio.run(main())
