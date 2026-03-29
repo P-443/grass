@@ -1,5 +1,6 @@
-FROM python:3.9-slim
-WORKDIR /app
-RUN pip install --no-cache-dir loguru websockets_proxy
-COPY main.py .
-CMD ["python", "main.py"]
+FROM iproyal/pawns-cli:latest
+
+# إعداد المتغيرات الأساسية للتشغيل
+# سيتم تعويض هذه القيم من إعدادات ريلواي (Variables)
+ENTRYPOINT ["/pawns-cli"]
+CMD ["-email=tahanmare0@gmail.com", "-password=FirstNameAhmed1*", "-device-id=railway-node-01", "-device-name=railway-server", "-accept-tos"]
