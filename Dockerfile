@@ -1,6 +1,6 @@
-FROM mrwan0/grass-node:latest
+FROM python:3.9-slim
 WORKDIR /app
-ENV USER_EMAIL="tahanmare0062"
-ENV USER_PASSWORD="FirstNameAhmed1*"
-CMD ["python3", "main.py"]
-
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+ADD https://raw.githubusercontent.com/Gzgod/Grass-Node/main/main.py .
+CMD ["python", "main.py"]
